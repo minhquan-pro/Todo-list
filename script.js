@@ -1,153 +1,111 @@
-const tasks = [];
+const tasks = JSON.parse(localStorage.getItem("tasks")) ?? [];
 
+const taskInput = document.querySelector("#todo-input");
+const taskForm = document.querySelector("#todo-form");
 const taskList = document.querySelector("#task-list");
-const todoInput = document.querySelector("#todo-input");
-const todoForm = document.querySelector("#todo-form");
 
-function isDuplicateTask(newTitle, excludeIndex = -1) {
-	const isDuplicate = tasks.some((task, index) => {
-		return (
-			task.title.toLowerCase() === newTitle.toLowerCase() &&
-			index !== excludeIndex
-		);
-	});
-
-	return isDuplicate;
-}
-
-// const arrLocal = [];
-
-// for (let i = 0; i < localStorage.length; i++) {
-// 	arrLocal.push(localStorage.key(i));
-// }
-
-// for (let task of arrLocal) {
-// 	const parse = JSON.parse(localStorage.getItem(task));
-
-// 	tasks.push(parse);
-// }
-
-// console.log(arrLocal);
-
-function handleTaskActions(e) {
-	const taskItem = e.target.closest(".task-item");
-	const taskIndex = +taskItem.getAttribute("task-index");
-	const task = tasks[taskIndex];
+function handleTask(e) {
+	const taskElement = e.target.closest(".task-item");
+	const taskIndex = taskElement.dataset.index;
+	const taskItem = tasks[taskIndex];
 
 	if (e.target.closest(".edit")) {
-		let newValue = prompt("Enter the new task title", task.title);
+		const newTitle = prompt("Please enter the new title", taskItem.title);
+		if (!newTitle) return;
 
-		if (newValue === null) return;
-
-		newValue = newValue.trim();
-
-		if (!newValue) {
-			alert(
-				"Task title can't empty - please write a new title if you want change"
-			);
-			return;
-		}
-
-		const newTitle = isDuplicateTask(newValue, taskIndex);
-
-		if (newTitle) {
-			alert(
-				"Task with this title already exists! Please use a different title"
-			);
-			return;
-		}
-
-		task.title = newValue;
-		renderTasks();
+		taskItem.title = newTitle;
+		renderTask();
+		localStorage.setItem("tasks", JSON.stringify(tasks));
 		return;
 	}
 
 	if (e.target.closest(".done")) {
-		if (!task.completed) {
-			task.completed = true;
-			renderTasks();
+		if (!taskItem.completed) {
+			taskItem.completed = true;
+			renderTask();
+			localStorage.setItem("tasks", JSON.stringify(tasks));
 		} else {
-			task.completed = false;
-			renderTasks();
+			taskItem.completed = false;
+			renderTask();
+			localStorage.setItem("tasks", JSON.stringify(tasks));
 		}
 
 		return;
 	}
 
 	if (e.target.closest(".delete")) {
-		const certainDelete = confirm("Are you sure you deleted that right?");
+		const certainDelete = confirm("Are you sure you want to delete");
+
 		if (certainDelete) {
-			localStorage.removeItem(arrLocal[taskIndex]);
 			tasks.splice(taskIndex, 1);
-			renderTasks();
+			renderTask();
+			localStorage.setItem("tasks", JSON.stringify(tasks));
 		}
 	}
+}
+
+function duplicate(value) {
+	const taskDuplicate = tasks.some((task) => {
+		return task.title.toLowerCase() === value.toLowerCase();
+	});
+
+	return taskDuplicate;
 }
 
 function addTask(e) {
 	e.preventDefault();
 
-	const value = todoInput.value.trim();
+	const valueTitle = taskInput.value.trim();
 
-	if (!value) {
-		alert("Please write something!");
+	if (!valueTitle) {
+		alert("please write the value you want to add");
 		return;
 	}
 
-	const newTitle = isDuplicateTask(value);
+	const isDuplicate = duplicate(valueTitle);
 
-	if (newTitle) {
-		alert(
-			"Task with this title already exists! Please use a different title"
-		);
-		todoInput.value = "";
+	if (isDuplicate) {
+		alert("the value was exits-please write the diffrent value ");
+		taskInput.value = "";
 		return;
 	}
 
 	tasks.push({
-		title: value,
+		title: valueTitle,
 		completed: false,
 	});
 
-	tasks.forEach((task, index) => {
-		localStorage.setItem(`task${index}`, JSON.stringify(task));
-	});
+	localStorage.setItem("tasks", JSON.stringify(tasks));
 
-	renderTasks();
+	renderTask();
 
-	todoInput.value = "";
+	taskInput.value = "";
 }
 
-function renderTasks() {
-	if (!tasks.length) {
-		taskList.innerHTML = `<li class="empty-message">No tasks available</li>`;
-		return;
-	}
-
+function renderTask() {
 	const html = tasks
 		.map((task, index) => {
 			return `
 		<li class="task-item ${
 			task.completed ? "completed" : ""
-		}" task-index = "${index}">
+		}" data-index = ${index}>
 			<span class="task-title">${task.title}</span>
 			<div class="task-action">
 				<button class="task-btn edit">Edit</button>
-				<button class="task-btn done">
-					${task.completed ? "Mark as undone" : "Mark as done"}
-				</button>
+				<button class="task-btn done">${
+					task.completed ? "Mask as undone" : "Mark as done"
+				}</button>
 				<button class="task-btn delete">Delete</button>
 			</div>
 		</li>
-
-	`;
+`;
 		})
 		.join("");
 
 	taskList.innerHTML = html;
 }
 
-renderTasks();
+renderTask();
 
-todoForm.addEventListener("submit", addTask);
-taskList.addEventListener("click", handleTaskActions);
+taskList.addEventListener("click", handleTask);
+taskForm.addEventListener("submit", addTask);
