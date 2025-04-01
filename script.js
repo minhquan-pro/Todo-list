@@ -6,6 +6,9 @@ const taskList = document.querySelector("#task-list");
 
 function handleTask(e) {
 	const taskElement = e.target.closest(".task-item");
+
+	if (!taskElement) return;
+
 	const taskIndex = taskElement.dataset.index;
 	const taskItem = tasks[taskIndex];
 
@@ -83,6 +86,11 @@ function addTask(e) {
 }
 
 function renderTask() {
+	if (!tasks.length) {
+		taskList.innerHTML = `<li class="empty-message">No task available</li>`;
+		return;
+	}
+
 	const html = tasks
 		.map((task, index) => {
 			return `
